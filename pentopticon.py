@@ -71,12 +71,13 @@ class Pentopticon(QMainWindow):
             cv2.putText(frame0, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
             cv2.putText(frame1, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
+            if self.is_recording:
+                self.out0.write(cv2.cvtColor(frame0, cv2.COLOR_RGB2BGR))
+                self.out1.write(cv2.cvtColor(frame1, cv2.COLOR_RGB2BGR))
+
             frame0 = cv2.cvtColor(frame0, cv2.COLOR_BGR2RGB)
             frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2RGB)
 
-            if self.is_recording:
-                self.out0.write(frame0)
-                self.out1.write(frame1)
 
             qimg0 = QImage(frame0.data, frame0.shape[1], frame0.shape[0], QImage.Format.Format_RGB888)
             qimg1 = QImage(frame1.data, frame1.shape[1], frame1.shape[0], QImage.Format.Format_RGB888)
