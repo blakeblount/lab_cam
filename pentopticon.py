@@ -75,6 +75,9 @@ class Pentopticon(QMainWindow):
                 self.out0.write(cv2.cvtColor(frame0, cv2.COLOR_RGB2BGR))
                 self.out1.write(cv2.cvtColor(frame1, cv2.COLOR_RGB2BGR))
 
+                cv2.circle(frame0, (100, 30), 15, (0, 0. 255), -1)
+                cv2.circle(frame1, (100, 30), 15, (0, 0. 255), -1)
+
             frame0 = cv2.cvtColor(frame0, cv2.COLOR_BGR2RGB)
             frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2RGB)
 
