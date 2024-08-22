@@ -1,5 +1,6 @@
 import sys
 import cv2
+from datetime import datetime
 from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QWidget, QHBoxLayout, QGridLayout
@@ -13,14 +14,11 @@ class Pentopticon(QMainWindow):
 
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
-        #self.layout = QHBoxLayout(self.central_widget)
         self.layout = QGridLayout(self.central_widget)
 
         self.label_cam0 = QLabel(self)
         self.label_cam1 = QLabel(self)
 
-        #self.layout.addWidget(self.label_cam0)
-        #self.layout.addWidget(self.label_cam1)
         self.layout.addWidget(self.label_cam0, 0, 0)
         self.layout.addWidget(self.label_cam1, 0, 1)
 
@@ -36,6 +34,11 @@ class Pentopticon(QMainWindow):
         ret1, frame1 = self.cam1.read()
 
         if ret0 and ret1:
+            timestamp = datetime.now().strfrtime('%Y-%m-%d %H:%M:%S')
+
+            cv2.putText(frame0, timestamp, (10, 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+            cv2.putText(frame1, timestamp, (10, 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+
             frame0 = cv2.cvtColor(frame0, cv2.COLOR_BGR2RGB)
             frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2RGB)
 
