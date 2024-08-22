@@ -3,7 +3,7 @@ import cv2
 from datetime import datetime
 from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QWidget, QHBoxLayout, QGridLayout
+from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QWidget, QHBoxLayout, QGridLayout, QPushButton, QVBoxLayout
 
 class Pentopticon(QMainWindow):
     def __init__(self):
@@ -14,20 +14,52 @@ class Pentopticon(QMainWindow):
 
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
-        self.layout = QGridLayout(self.central_widget)
+        self.layout = QVBoxLayout(self.central_widget)
+
+        self.grid_layout = QGridLayout()
+        self.layout.addLayout(self.grid_layout)
 
         self.label_cam0 = QLabel(self)
         self.label_cam1 = QLabel(self)
 
-        self.layout.addWidget(self.label_cam0, 0, 0)
-        self.layout.addWidget(self.label_cam1, 0, 1)
+        self.grid_layout.addWidget(self.label_cam0, 0, 0)
+        self.grid_layout.addWidget(self.label_cam1, 0, 1)
+
+        self.record_button = QPushButton("Start Recording", self)
+        self.layout.addWidget(self.record_button)
+        self.record_button.clicked.connect(self.toggle_recording)
 
         self.cam0 = cv2.VideoCapture(0)
         self.cam1 = cv2.VideoCapture(1)
 
+        self.is_recording = False
+        self.out0 = None
+        self.out1 = None
+
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(33)
+
+    def toggle_recording(self):
+        if self.is_recording:
+            self.is_recording = False
+            self.record_button.setText("Start Recording")
+            self.stop_recording()
+        else:
+            self.is_recording = True
+            self.record_button.setText("Stop Recording")
+            self.start_recording()
+
+    def start_recording(self):
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        self.out0 = cv2.VideoWriter('cam_0_output.avi', fourcc, 30.0, (640, 480))
+        self.out1 = cv2.VideoWriter('cam_1_output.avi', fourcc, 30.0, (640, 480))
+
+    def stop_recording(self):
+        if self.out0 is not None:
+            self.out0.release()
+        if self.out1 is not None:
+            self.out1.release()
 
     def update_frame(self):
         ret0, frame0 = self.cam0.read()
@@ -41,6 +73,10 @@ class Pentopticon(QMainWindow):
 
             frame0 = cv2.cvtColor(frame0, cv2.COLOR_BGR2RGB)
             frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2RGB)
+
+            if self.is_recording:
+                self.out0.write(frame0)
+                self.out1.write(frame1)
 
             qimg0 = QImage(frame0.data, frame0.shape[1], frame0.shape[0], QImage.Format.Format_RGB888)
             qimg1 = QImage(frame1.data, frame1.shape[1], frame1.shape[0], QImage.Format.Format_RGB888)
