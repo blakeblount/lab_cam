@@ -34,10 +34,10 @@ class Pentopticon(QMainWindow):
         ret1, frame1 = self.cam1.read()
 
         if ret0 and ret1:
-            timestamp = datetime.now().strfrtime('%Y-%m-%d %H:%M:%S')
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f')[:-3]
 
-            cv2.putText(frame0, timestamp, (10, 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-            cv2.putText(frame1, timestamp, (10, 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+            cv2.putText(frame0, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+            cv2.putText(frame1, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
             frame0 = cv2.cvtColor(frame0, cv2.COLOR_BGR2RGB)
             frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2RGB)
