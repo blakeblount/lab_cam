@@ -1,23 +1,21 @@
 # organize imports
-import numpy as np
+#import numpy as np
 import cv2
 
-cam0 = cv2.VideoCapture(0)
-#cam1 = cv2.VideoCapture(1)
-#cam2 = cv2.VideoCapture(2)
+cam = cv2.VideoCapture(0, cv2.CAP_V4L2)
+cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 # Define the codec and create VideoWriter object
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out0 = cv2.VideoWriter('output.avi', fourcc, 40.0, (640, 480))
-#out1 = cv2.VideoWriter('output.avi', fourcc, 40.0, (640, 480))
-#out2 = cv2.VideoWriter('output.avi', fourcc, 40.0, (640, 480))
-
+out = cv2.VideoWriter('output.avi', fourcc, 40.0, (1920, 1080))
 
 # loop runs if capturing has been initialized. 
 while(True):
     # reads frames from a camera 
     # ret checks return at each frame
-    ret, frame = cap.read()
+    ret, frame = cam.read()
+    #print(f"{frame.shape[0]} x {frame.shape[1]}")
 
     # output the frame
     out.write(frame)
@@ -30,7 +28,7 @@ while(True):
         break
 
 # Close the window / Release webcam
-cap.release()
+cam.release()
 
 # After we release our webcam, we also release the output
 out.release()

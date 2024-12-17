@@ -1,50 +1,94 @@
+import sys
 import cv2
-import os
-import threading
 import time
-from datetime import datetime
+from PyQt6.QtWidgets import (QApplication, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QLineEdit)
+from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtCore import QTimer
 
-class MultiCameraFeed:
-    def __init__(self, num_cameras):
-        self.num_cameras = num_cameras
-        self.captures = [cv2.VideoCapture(i, cv2.CAP_DSHOW) for i in range(num_cameras)]
-        self.frames = [None] * num_cameras
+class DualCameraApp(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Dual Camera Feed with Recording")
+        self.init_ui()
+        
+        # Initialize camera feeds
+        self.cap1 = cv2.VideoCapture(0)
+        self.cap2 = cv2.VideoCapture(1)
+
+        # Recording state and variables
         self.recording = False
-        self.out_writers = [None] * num_cameras
-        self.sync_start_time = None
+        self.writer1 = None
+        self.writer2 = None
+        self.filename = "output"
 
-    def _read_frames(self):
-        while True:
-            for i, cap in enumerate(self.captures):
-                if cap.isOpened():
-                    ret, frame = cap.read()
-                    if ret:
-                        self.frames[i] = frame
+        # Timers for refreshing the video feed
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_frames)
+        self.timer.start(30)
 
-    def start_reading(self):
-        threading.Thread(target=self._read_frames, daemon=True).start()
+    def init_ui(self):
+        # Layout for video feeds
+        self.video_label1 = QLabel("No Feed")
+        self.video_label2 = QLabel("No Feed")
+        self.video_label1.setFixedSize(640, 480)
+        self.video_label2.setFixedSize(640, 480)
+        self.video_label1.setStyleSheet("background-color: black; color: white; text-align: center;")
+        self.video_label2.setStyleSheet("background-color: black; color: white; text-align: center;")
+        
+        video_layout = QHBoxLayout()
+        video_layout.addWidget(self.video_label1)
+        video_layout.addWidget(self.video_label2)
 
-    def display_feeds(self):
-        while True:
-            montage = self._create_montage()
-            if montage is not None:
-                cv2.imshow('Camera Feeds', montage)
+        # Controls
+        self.filename_input = QLineEdit()
+        self.filename_input.setPlaceholderText("Enter filename")
+        
+        self.record_button = QPushButton("Start Recording")
+        self.record_button.clicked.connect(self.toggle_recording)
+        
+        control_layout = QHBoxLayout()
+        control_layout.addWidget(self.filename_input)
+        control_layout.addWidget(self.record_button)
 
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord('q'):
-                break
-            elif key == ord('r'):
-                self.toggle_recording()
+        # Main layout
+        main_layout = QVBoxLayout()
+        main_layout.addLayout(video_layout)
+        main_layout.addLayout(control_layout)
 
-        self.stop()
+        self.setLayout(main_layout)
 
-    def _create_montage(self):
-        non_empty_frames = [frame for frame in self.frames if frame is not None]
-        if not non_empty_frames:
-            return None
+    def update_frames(self):
+        # Read frames from both cameras
+        ret1, frame1 = self.cap1.read()
+        ret2, frame2 = self.cap2.read()
+        
+        # Add timestamp to frames
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        if ret1:
+            cv2.putText(frame1, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            self.display_frame(self.video_label1, frame1)
+            if self.recording and self.writer1:
+                self.writer1.write(frame1)
+        else:
+            self.display_no_feed(self.video_label1)
+        
+        if ret2:
+            cv2.putText(frame2, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            self.display_frame(self.video_label2, frame2)
+            if self.recording and self.writer2:
+                self.writer2.write(frame2)
+        else:
+            self.display_no_feed(self.video_label2)
 
-        rows = [cv2.hconcat(non_empty_frames[i:i+3]) for i in range(0, len(non_empty_frames), 3)]
-        return cv2.vconcat(rows) if rows else None
+    def display_frame(self, label, frame):
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        height, width, channel = frame_rgb.shape
+        bytes_per_line = 3 * width
+        q_image = QImage(frame_rgb.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
+        label.setPixmap(QPixmap.fromImage(q_image))
+
+    def display_no_feed(self, label):
+        label.setText("No Feed")
 
     def toggle_recording(self):
         if not self.recording:
@@ -53,45 +97,45 @@ class MultiCameraFeed:
             self.stop_recording()
 
     def start_recording(self):
-        self.recording = True
-        self.sync_start_time = time.time()
+        # Get filename
+        filename = self.filename_input.text().strip()
+        if not filename:
+            filename = "output"
+        self.filename = filename
 
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        os.makedirs('recordings', exist_ok=True)
-        for i, frame in enumerate(self.frames):
-            if frame is not None:
-                height, width, _ = frame.shape
-                out_filename = f'recordings/camera_{i}_{timestamp}.avi'
-                self.out_writers[i] = cv2.VideoWriter(out_filename, cv2.VideoWriter_fourcc(*'XVID'), 30, (width, height))
-        print("Recording started.")
+        # Define codecs and create VideoWriters
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        self.writer1 = cv2.VideoWriter(f"{self.filename}_1.avi", fourcc, 20.0, (640, 480))
+        self.writer2 = cv2.VideoWriter(f"{self.filename}_2.avi", fourcc, 20.0, (640, 480))
+
+        self.record_button.setText("Stop Recording")
+        self.recording = True
 
     def stop_recording(self):
         self.recording = False
-        for writer in self.out_writers:
-            if writer:
-                writer.release()
-        self.out_writers = [None] * self.num_cameras
-        print("Recording stopped.")
+        self.record_button.setText("Start Recording")
+        
+        if self.writer1:
+            self.writer1.release()
+        if self.writer2:
+            self.writer2.release()
+        self.writer1 = None
+        self.writer2 = None
 
-    def write_frames(self):
-        while True:
-            if self.recording:
-                for i, writer in enumerate(self.out_writers):
-                    if writer and self.frames[i] is not None:
-                        timestamp = time.time() - self.sync_start_time
-                        cv2.putText(self.frames[i], f"{timestamp:.2f}s", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                        writer.write(self.frames[i])
+    def closeEvent(self, event):
+        # Release resources on close
+        if self.cap1.isOpened():
+            self.cap1.release()
+        if self.cap2.isOpened():
+            self.cap2.release()
+        if self.writer1:
+            self.writer1.release()
+        if self.writer2:
+            self.writer2.release()
+        event.accept()
 
-    def stop(self):
-        for cap in self.captures:
-            if cap.isOpened():
-                cap.release()
-        cv2.destroyAllWindows()
-
-if __name__ == '__main__':
-    num_cameras = 2  # Adjust based on available cameras
-    multi_cam = MultiCameraFeed(num_cameras)
-
-    multi_cam.start_reading()
-    threading.Thread(target=multi_cam.write_frames, daemon=True).start()
-    multi_cam.display_feeds()
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = DualCameraApp()
+    window.show()
+    sys.exit(app.exec())
