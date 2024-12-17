@@ -19,6 +19,8 @@ class Pentopticon(QMainWindow):
         self.grid_layout = QGridLayout()
         self.layout.addLayout(self.grid_layout)
 
+#        self.active_camera_groupbox = QGroupBox("Active Cameras", self)
+
         self.label_cam0 = QLabel(self)
         self.label_cam1 = QLabel(self)
 
