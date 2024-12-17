@@ -8,12 +8,11 @@ from PyQt6.QtCore import QTimer
 class DualCameraApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Dual Camera Feed with Recording")
+        self.setWindowTitle("LabCam")
         self.init_ui()
         
-        # Initialize camera feeds
-        self.cap1 = cv2.VideoCapture(0)
-        self.cap2 = cv2.VideoCapture(1)
+        # Auto-detect camera indices
+        self.cap1, self.cap2 = self.find_cameras()
 
         # Recording state and variables
         self.recording = False
@@ -25,6 +24,22 @@ class DualCameraApp(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frames)
         self.timer.start(30)
+
+    def find_cameras(self):
+        cameras = []
+        for i in range(5):  # Test indices 0-4
+            cap = cv2.VideoCapture(i)
+            if cap.isOpened():
+                cameras.append(cap)
+            else:
+                cap.release()
+        
+        if len(cameras) >= 2:
+            return cameras[0], cameras[1]
+        elif len(cameras) == 1:
+            return cameras[0], None
+        else:
+            return None, None
 
     def init_ui(self):
         # Layout for video feeds
@@ -59,24 +74,29 @@ class DualCameraApp(QWidget):
 
     def update_frames(self):
         # Read frames from both cameras
-        ret1, frame1 = self.cap1.read()
-        ret2, frame2 = self.cap2.read()
-        
-        # Add timestamp to frames
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        if ret1:
-            cv2.putText(frame1, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            self.display_frame(self.video_label1, frame1)
-            if self.recording and self.writer1:
-                self.writer1.write(frame1)
+        
+        if self.cap1 and self.cap1.isOpened():
+            ret1, frame1 = self.cap1.read()
+            if ret1:
+                cv2.putText(frame1, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                self.display_frame(self.video_label1, frame1)
+                if self.recording and self.writer1:
+                    self.writer1.write(frame1)
+            else:
+                self.display_no_feed(self.video_label1)
         else:
             self.display_no_feed(self.video_label1)
         
-        if ret2:
-            cv2.putText(frame2, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            self.display_frame(self.video_label2, frame2)
-            if self.recording and self.writer2:
-                self.writer2.write(frame2)
+        if self.cap2 and self.cap2.isOpened():
+            ret2, frame2 = self.cap2.read()
+            if ret2:
+                cv2.putText(frame2, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                self.display_frame(self.video_label2, frame2)
+                if self.recording and self.writer2:
+                    self.writer2.write(frame2)
+            else:
+                self.display_no_feed(self.video_label2)
         else:
             self.display_no_feed(self.video_label2)
 
@@ -105,8 +125,10 @@ class DualCameraApp(QWidget):
 
         # Define codecs and create VideoWriters
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.writer1 = cv2.VideoWriter(f"{self.filename}_1.avi", fourcc, 20.0, (640, 480))
-        self.writer2 = cv2.VideoWriter(f"{self.filename}_2.avi", fourcc, 20.0, (640, 480))
+        if self.cap1:
+            self.writer1 = cv2.VideoWriter(f"{self.filename}_1.avi", fourcc, 20.0, (640, 480))
+        if self.cap2:
+            self.writer2 = cv2.VideoWriter(f"{self.filename}_2.avi", fourcc, 20.0, (640, 480))
 
         self.record_button.setText("Stop Recording")
         self.recording = True
@@ -124,9 +146,9 @@ class DualCameraApp(QWidget):
 
     def closeEvent(self, event):
         # Release resources on close
-        if self.cap1.isOpened():
+        if self.cap1 and self.cap1.isOpened():
             self.cap1.release()
-        if self.cap2.isOpened():
+        if self.cap2 and self.cap2.isOpened():
             self.cap2.release()
         if self.writer1:
             self.writer1.release()
