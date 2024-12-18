@@ -81,9 +81,9 @@ class DualCameraApp(QWidget):
         if self.cap1 and self.cap1.isOpened():
             ret1, frame1 = self.cap1.read()
             if ret1:
-                frame1 = cv2.resize(frame1, (640, 480))
-                cv2.putText(frame1, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                self.display_frame(self.video_label1, frame1)
+                frame1_resized = cv2.resize(frame1, (640, 480))
+                cv2.putText(frame1_resized, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                self.display_frame(self.video_label1, frame1_resized)
                 if self.recording and self.writer1:
                     self.writer1.write(frame1)
             else:
@@ -94,9 +94,9 @@ class DualCameraApp(QWidget):
         if self.cap2 and self.cap2.isOpened():
             ret2, frame2 = self.cap2.read()
             if ret2:
-                frame2 = cv2.resize(frame2, (640, 480))
-                cv2.putText(frame2, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                self.display_frame(self.video_label2, frame2)
+                frame2_resized = cv2.resize(frame2, (640, 480))
+                cv2.putText(frame2_resized, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                self.display_frame(self.video_label2, frame2_resized)
                 if self.recording and self.writer2:
                     self.writer2.write(frame2)
             else:
@@ -128,11 +128,11 @@ class DualCameraApp(QWidget):
         self.filename = filename
 
         # Define codecs and create VideoWriters
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
         if self.cap1:
-            self.writer1 = cv2.VideoWriter(f"{self.filename}_1.avi", fourcc, 20.0, (1920, 1080))
+            self.writer1 = cv2.VideoWriter(f"{self.filename}_1.mp4", fourcc, 20.0, (1920, 1080))
         if self.cap2:
-            self.writer2 = cv2.VideoWriter(f"{self.filename}_2.avi", fourcc, 20.0, (1920, 1080))
+            self.writer2 = cv2.VideoWriter(f"{self.filename}_2.mp4", fourcc, 20.0, (1920, 1080))
 
         self.record_button.setText("Stop Recording")
         self.recording = True
