@@ -30,6 +30,8 @@ class DualCameraApp(QWidget):
         for i in range(5):  # Test indices 0-4
             cap = cv2.VideoCapture(i)
             if cap.isOpened():
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
                 cameras.append(cap)
             else:
                 cap.release()
@@ -126,9 +128,9 @@ class DualCameraApp(QWidget):
         # Define codecs and create VideoWriters
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         if self.cap1:
-            self.writer1 = cv2.VideoWriter(f"{self.filename}_1.avi", fourcc, 20.0, (640, 480))
+            self.writer1 = cv2.VideoWriter(f"{self.filename}_1.avi", fourcc, 20.0, (1920, 1080))
         if self.cap2:
-            self.writer2 = cv2.VideoWriter(f"{self.filename}_2.avi", fourcc, 20.0, (640, 480))
+            self.writer2 = cv2.VideoWriter(f"{self.filename}_2.avi", fourcc, 20.0, (1920, 1080))
 
         self.record_button.setText("Stop Recording")
         self.recording = True
