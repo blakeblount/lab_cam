@@ -81,6 +81,7 @@ class DualCameraApp(QWidget):
         if self.cap1 and self.cap1.isOpened():
             ret1, frame1 = self.cap1.read()
             if ret1:
+                frame1 = cv2.resize(frame1, (640, 480))
                 cv2.putText(frame1, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 self.display_frame(self.video_label1, frame1)
                 if self.recording and self.writer1:
@@ -93,6 +94,7 @@ class DualCameraApp(QWidget):
         if self.cap2 and self.cap2.isOpened():
             ret2, frame2 = self.cap2.read()
             if ret2:
+                frame2 = cv2.resize(frame2, (640, 480))
                 cv2.putText(frame2, timestamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 self.display_frame(self.video_label2, frame2)
                 if self.recording and self.writer2:
