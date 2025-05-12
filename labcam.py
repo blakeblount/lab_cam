@@ -28,10 +28,10 @@ class DualCameraApp(QWidget):
     def find_cameras(self):
         cameras = []
         for i in range(5):  # Test indices 0-4
-            cap = cv2.VideoCapture(i)
+            cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)
             if cap.isOpened():
-                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
                 cameras.append(cap)
             else:
                 cap.release()
@@ -42,6 +42,7 @@ class DualCameraApp(QWidget):
             return cameras[0], None
         else:
             return None, None
+    
 
     def init_ui(self):
         # Layout for video feeds
